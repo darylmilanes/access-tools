@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <!-- Locked viewport (no auto-zoom, no pinch zoom) -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Mini-Apps Shell</title>
+  <link rel="stylesheet" href="style.css" />
+      <!-- PWA -->
+      <link rel="manifest" href="manifest.webmanifest">
+      <meta name="theme-color" content="#006666">
+      <meta name="apple-mobile-web-app-capable" content="yes">
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+      <meta name="apple-mobile-web-app-title" content="Mini-Apps">
+      <link rel="apple-touch-icon" href="icons/icon-180.png">
+    </head>
+<body>
+  <!-- Full-viewport wrapper centers the fixed-ratio canvas -->
+  <div class="wrap">
+  <!-- iPad canvas: 2124 × 1476 (landscape) -->
+    <main class="canvas">
+      <!-- LEFT COLUMN (3 stacked modules) -->
+      <section class="col left">
+        <div class="mod clock" aria-label="Clock">
+          <div class="clock-inner">
+            <div class="time" id="clockTime">10:30 AM</div>
+            <div class="daydate">
+              <div class="dow"  id="clockDow">SATURDAY</div>
+              <div class="date" id="clockDate">SEP 06</div>
+            </div>
+          </div>
+        </div>
+        <div class="mod calendar" aria-label="Calendar" id="calendar">
+          <div class="cal-head">
+            <button class="cal-monthyear" id="calMYBtn" aria-haspopup="dialog" aria-expanded="false">
+              <span id="calMonth">SEPTEMBER</span> <span id="calYear">2025</span>
+            </button>
+
+            <button class="cal-today" id="calTodayBtn" title="Jump to today">Today</button>
+          </div>
+
+          <div class="cal-weekdays" aria-hidden="true">
+          <div class="wk s">SUN</div><div class="wk">MON</div><div class="wk">TUE</div>
+          <div class="wk">WED</div><div class="wk">THU</div><div class="wk">FRI</div><div class="wk">SAT</div>
+          </div>
+
+          <div class="cal-grid" id="calGrid" role="grid" aria-label="Month grid"></div>
+
+          <!-- Month/Year picker (opens when month-year is tapped) -->
+          <div class="cal-picker" id="calPicker" role="dialog" aria-modal="false" aria-labelledby="calMYBtn">
+            <div class="picker-inner">
+              <div class="year-row">
+                <button class="year-step" data-step="-1" aria-label="Previous year">‹</button>
+                <div class="year-val" id="pickerYear">2025</div>
+                <button class="year-step" data-step="1" aria-label="Next year">›</button>
+              </div>
+              <div class="month-grid">
+                <button data-m="0">JAN</button><button data-m="1">FEB</button><button data-m="2">MAR</button><button data-m="3">APR</button>
+                <button data-m="4">MAY</button><button data-m="5">JUN</button><button data-m="6">JUL</button><button data-m="7">AUG</button>
+                <button data-m="8">SEP</button><button data-m="9">OCT</button><button data-m="10">NOV</button><button data-m="11">DEC</button>
+              </div>
+              <div class="picker-actions">
+                <button class="picker-close" id="pickerClose">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mod calculator" aria-label="Calculator">
+          <div class="calc-display" id="calcDisplay">0</div>
+          <!-- NEW: warning line -->
+          <div class="calc-msg" id="calcMsg" aria-live="polite"></div>
+          <div class="calc-keys" role="group" aria-label="Calculator keypad">
+            <button data-key="paren" class="fn">()</button>
+            <button data-key="7">7</button>
+            <button data-key="8">8</button>
+            <button data-key="9">9</button>
+            <button data-key="op" data-op="/">÷</button>
+
+            <button data-key="percent" class="fn">%</button>
+            <button data-key="4">4</button>
+            <button data-key="5">5</button>
+            <button data-key="6">6</button>
+            <button data-key="op" data-op="*">×</button>
+
+            <button data-key="ac" class="warn">AC</button>
+            <button data-key="1">1</button>
+            <button data-key="2">2</button>
+            <button data-key="3">3</button>
+            <button data-key="op" data-op="-">−</button>
+
+            <button data-key="del" class="warn">DEL</button>
+            <button data-key=".">.</button>
+            <button data-key="0">0</button>
+            <button data-key="=" class="eq">=</button>
+            <button data-key="op" data-op="+">+</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN (EOD full-height) -->
+      <section class="col right">
+        <div class="mod eod" aria-label="To-do List">
+          <section class="module module--eod" id="eodModule" aria-label="To-do List" tabindex="-1">
+            <header class="module-head">
+              <h2 class="module-title">To-do List</h2>
+               <button id="eodClearBtn" class="icon-btn" aria-label="Clear all items" title="Clear all items">✕</button>
+            </header>
+
+            <div class="module-body eod-body" id="eodBody">
+              <ul id="eodList" class="eod-list" aria-live="polite"></ul>
+              <!-- hint removed -->
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+    <script src="pwa.js"></script>
+  <script src="clock.js"></script>
+  <script src="calculator.js"></script>
+  <script src="ph-holidays.js"></script>
+  <script src="calendar.js"></script>
+  <!-- EOD script -->
+<script src="eod.js"></script>
+  </body>
+</html>

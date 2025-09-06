@@ -1,0 +1,16 @@
+{
+  "name": "Mini-Apps Board",
+  "short_name": "Mini-Apps",
+  "description": "Clock, calendar, calculator, and EOD list in a fixed iPad canvas.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#dddddd",
+  "theme_color": "#006666",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
