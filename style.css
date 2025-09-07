@@ -1,36 +1,45 @@
 :root{
-  --bg: #dddddd;   /* main background */
-  --box:#006666;   /* teal modules */
-  --gap: 18px;     /* uniform gutter/spacing */
+  --bg: #dde3e6;
+  --bg2: #fafeff;
+  --teal: #006666;
+  --gap: 18px;
   --radius: 16px;
+
+  /* To-do sizing */
+  --todo-pad: 16px;
+  --todo-gap: 10px;
+  --todo-w: 90%;       /* fixed card width relative to module */
+  --todo-h: 48px;      /* fixed card height */
+  --todo-font: 16px;
+  --todo-done-opacity: .55;
 }
 
 *{ box-sizing: border-box; }
 html, body { height: 100%; }
 body{
   margin: 0;
-  background: var(--bg);
-  overflow: hidden;                 /* no scrolling */
-  overscroll-behavior: none;        /* no bounce */
-  -webkit-text-size-adjust: 100%;   /* avoid text zoom */
-  touch-action: manipulation;       /* reduce double-tap zoom */
+  background:
+    radial-gradient(1200px 800px at 10% -10%, rgba(20,155,178,0.22), transparent 60%),
+    radial-gradient(900px 700px at 110% 10%, rgba(0,102,102,0.18), transparent 60%),
+    linear-gradient(180deg, #eef3f5 0%, #e4eaed 100%);
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
   font-family: Montserrat, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-/* Center the canvas and prevent layout shift */
 .wrap{
   width: 100vw;
   height: 100vh;
   display: grid;
   place-items: center;
-  padding: 0; /* no letterbox padding; background shows if aspect differs */
+  padding: 0;
 }
 
-/* Fixed-ratio canvas that scales to fit without overflow */
 .canvas{
-  aspect-ratio: 2124 / 1476;
-  /* scale to fit viewport without scroll/zoom */
-  width: min(100vw, calc(100vh * (2124 / 1476)));
+  aspect-ratio: 2420 / 1500;
+  width: min(100vw, calc(100svh * (2420 / 1500)));
   height: auto;
 
   display: grid;
@@ -39,537 +48,209 @@ body{
   padding: var(--gap);
   background: transparent;
   container-type: size;
-  max-width: 2124px;
-  max-height: 1476px;
-  overflow: hidden; /* ensure canvas itself never scrolls */
+  max-width: 2420px;
+  max-height: none;
+  overflow: hidden;
 }
 
-/* Columns and modules */
+/* Columns */
 .col.left{
   display: grid;
   grid-template-rows: 0.4fr 1.3fr 1.45fr; /* clock, calendar, calculator */
   gap: var(--gap);
-  overflow: hidden; /* prevent any scrolling */
+  overflow: hidden;
 }
+.col.right{ display: flex; flex-direction: column; }
 
-.col.left .mod {
-  overflow: hidden; /* ensure individual modules in the left column don't scroll */
-}
-
-.col.right{
-  display: flex;
-  flex-direction: column;
-}
-
-/* Modules: clip strictly inside rounded box (iOS-safe) */
+/* Module shells */
 .mod{
-  background: var(--box);
+  background: color-mix(in srgb, var(--teal) 86%, black 0%);
   border-radius: var(--radius);
   overflow: hidden;
-  -webkit-mask-image: -webkit-radial-gradient(white, black); /* iOS Safari clip fix */
+  position: relative;
+  isolation: isolate;
+}
+#calendar .cal-head button { pointer-events: auto; }
+.mod::before{
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02));
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+.mod::after{
+  content: "";
+  position: absolute; inset: 0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
-/* EOD fills right column */
-.eod{ flex: 1; }
-
-/* Optional tiny tweak for very small laptop windows while preserving ratio */
-@media (max-width: 900px){
-  :root{ --gap: 14px; --radius: 14px; }
-}
-
-/* ---------- Clock module ---------- */
-.clock{
-  padding: calc(var(--gap) * 1.1) calc(var(--gap) * 1.2);
-  display: grid;
-  align-items: center;
-  grid-template-columns: minmax(0, 1fr) auto;
-  container-type: size;
-  overflow: hidden;       /* extra safety */
-}
-
-.clock-inner{ display: contents; }
-
-.clock .time{
-  color: #fafeff;
+/* Clock */
+.mod.clock .clock-time{
+  font-family: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
   font-weight: 900;
-  line-height: 0.95;                                   /* slightly tighter */
-  /* Tighter cap: whichever is smaller, height or width wins */
-  font-size: clamp(60px, min(8.5cqh, 12cqw), 160px);
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  margin: 0;                                           /* no offsets */
-  padding-inline-start: clamp(6px, 1.2cqw, 28px);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: clip;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-.clock .daydate{
-  text-align: right;
-  color: #fafeff;
-  display: grid;
-  align-content: center;
-  gap: 0.4cqh;
-  padding-left: calc(var(--gap) * 0.5);
-  min-width: 0;
+/* Calculator */
+.mod.calculator{
+  display:flex;
+  flex-direction:column;
+  padding:12px;
+  gap:10px;
+  color:#fff;
 }
-.clock .dow,
-.clock .date{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.clock .dow{  font-weight:700; font-size: clamp(34px, 3cqh, 48px); }
-.clock .date{ font-weight:600; font-size: clamp(24px, 2.4cqh, 40px); }
-
-/* ---------- Calculator module ---------- */
-.calculator{
-  padding: calc(var(--gap) * 0.9);
-  display: grid;
-  grid-template-rows: auto 1fr;
-  gap: calc(var(--gap) * 0.8);
-  container-type: size;
-}
-
 .calc-display{
-  background: #fafeff;
-  color: #006666;
-  border-radius: 12px;
-  padding: 1.2cqh 1.6cqw;
-  min-height: 30cqh;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  font-weight: 700;
-  font-size: clamp(40px, 3.2cqh, 42px);
-  letter-spacing: 0.5px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+  font-weight:700;
+  font-size: clamp(22px, 3.2cqw, 40px);
+  line-height:1.2;
+  text-align:right;
+  padding:10px 12px;
+  border-radius:12px;
+  background: rgba(255,255,255,.08);
+  min-height:48px;
+  overflow:hidden;
+  white-space:nowrap;
 }
-
-/* Warning line under display */
-.calc-msg{
-  min-height: 2.2cqh;           /* reserves space so no jumpiness */
-  color: #ff8a96;
-  font-weight: 700;
-  font-size: clamp(14px, 1.8cqh, 22px);
-  line-height: 1.15;
-  padding: 0 0.6cqw;
-  letter-spacing: 0.2px;
-  /* visually subtle; no background so the canvas stays clean */
-}
-
-/* Inline error highlight inside the display */
-.calc-display .err{
-  color: #ff8a96;
-  background: rgba(248, 64, 81, 0.10);
-  border-radius: 6px;
-  padding: 0 2px;
-  text-decoration: underline;
-  text-decoration-thickness: 0.14em;
-  text-underline-offset: 0.18em;
-}
-
-/* Show error as placeholder (ghost text) when .calc-msg has no text nodes */
-.calc-msg:empty::before{
-  content: attr(data-placeholder);
-  color: #ff8a96;
-  font-weight: 700;
-  font-size: clamp(20px, 1.8cqh, 22px);
-  line-height: 1.15;
-  letter-spacing: 0.2px;
-  /* same spacing feel as real text */
-  padding: 0 0.6cqw;
-  display: block;
-}
-
-.calc-keys{
-  display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 5 columns x 4 rows like screenshot */
-  grid-auto-rows: 12cqh;
-  gap: calc(var(--gap) * 0.6);
-}
-
+.calc-display .err{ background:rgba(255,80,80,.23); border-radius:6px; padding:0 2px; }
+.calc-msg{ min-height:20px; font-size: clamp(11px, 1.6cqw, 14px); opacity:.9; text-align:right; }
+.calc-msg:empty::before{ content: attr(data-placeholder); opacity:.8; }
+.calc-keys{ display:grid; grid-template-columns: repeat(5, 1fr); gap:8px; }
 .calc-keys button{
-  user-select: none;
-  -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  appearance: none;
+  border:0; border-radius:12px; font-weight:600;
+  padding:.7rem .5rem; background: rgba(255,255,255,.12); color:#fff; cursor:pointer;
+}
+.calc-keys button:active{ transform: translateY(1px); }
+.calc-keys button.fn{ background: rgba(255,255,255,.18); }
+.calc-keys button.warn{ background: rgba(255,120,120,.28); }
+.calc-keys button.eq{ background: rgba(20,155,178,.45); }
+
+/* ===================== To-do List ===================== */
+.todo{
+  display:flex; flex-direction:column; height:100%;
+  padding: var(--todo-pad);
+}
+.todo-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 4px 2px 10px 2px;
+}
+.todo-title{
+  margin:0;
+  color:#fafeff;
+  font-weight:700;
+  letter-spacing:.3px;
+  font-size: clamp(16px, 2.4cqw, 24px);
+}
+.btn-clear{
+  -webkit-tap-highlight-color: transparent;
   border: 0;
-  outline: 0;
-  border-radius: 12px;
-  background: #fafeff;
-  color: #006666;
-  font-weight: 700;
-  font-size: clamp(16px, 2.6cqh, 36px);
-  line-height: 1;
-  display: grid;
-  place-items: center;
-  box-shadow: inset 0 -2px rgba(0,0,0,0.05);
-}
-
-/* ---------- Calendar module ---------- */
-.calendar{
-  position: relative;
-  padding: calc(var(--gap) * 0.9);
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  gap: calc(var(--gap) * 1);
-  container-type: size;            /* enables cqw/cqh scaling */
-  overflow: hidden;                /* no internal scroll */
-}
-
-/* Header: Month·Year left, Today right */
-.cal-head{
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-}
-.cal-monthyear{
-  appearance: none; border: 0; background: transparent;
-  color: #fafeff; font-weight: 800;
-  font-size: clamp(30px, 3.2cqh, 44px);
-  letter-spacing: 0.6px;
-  padding: 0.2cqh 0.4cqw;
-  border-radius: 10px;
-}
-.cal-monthyear:active{ transform: translateY(1px); }
-
-.cal-today{
-  appearance: none; border: 0;
-  background: #fafeff; color: #006666; font-weight: 800;
-  font-size: clamp(15px, 2cqh, 24px);
-  padding: 0.8cqh 1.4cqw;
-  border-radius: 999px;
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Week header */
-.cal-weekdays{
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: calc(var(--gap) * 0.5);
-  color: #b4b4b4;
-  font-weight: 700;
-  font-size: clamp(15px, 1.8cqh, 20px);
-}
-.cal-weekdays .wk{
-  display: grid; place-items: center;
-}
-.cal-weekdays .wk.s{ color: #f84051; } /* Sunday letter in red */
-
-/* Grid of days (6 rows x 7 cols) */
-.cal-grid{
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: 10cqh;
-  gap: calc(var(--gap) * 0.5);
-}
-.cal-grid .d{
-  position: relative;
-  display: grid; place-items: center;
-  border-radius: 12px;
-  background: rgba(250, 254, 255, 0.3);
+  padding: 8px 14px;
+  background: rgba(255,255,255,.14);
   color: #fafeff;
-  font-weight: 700;
-  font-size: clamp(14px, 2.6cqh, 32px);
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-tap-highlight-color: transparent;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: transform .12s ease, background .2s ease, opacity .2s ease;
 }
-.cal-grid .d.other { color: #b4b4b4; background: rgba(250,254,255,0.06); }
-.cal-grid .d.sun   { color: #f84051; } /* Sundays */
-.cal-grid .d.today{
-  background: #fafeff;
-  color: #006666;
-  box-shadow: 0 0 0 2px rgba(250,254,255,0.25) inset;
+.btn-clear:hover{ background: rgba(255,255,255,.20); }
+.btn-clear:active{ transform: translateY(1px) scale(.99); }
+
+.todo-body{
+  flex:1;
+  overflow: hidden;               /* no vertical scrolling inside container */
+  padding-top: 6px;
+}
+.todo-list{
+  list-style:none; margin:0; padding:0;
+  height:100%;
+  display:flex; flex-direction:column;
+  gap: var(--todo-gap);
 }
 
-/* Optional tiny dot placeholder (for future EOD markers) */
-.cal-grid .d .dot{
-  position: absolute; bottom: 0.8cqh; width: 0.6cqh; height: 0.6cqh; border-radius: 50%;
-  background: #fafeff; opacity: 0.8;
+/* Row (fixed size) */
+.todo-item{
+  display:flex;
+  width:100%;
+  min-height: var(--todo-h);
+  align-items:center;
+  /* Alignment behavior:
+     - default: left (margin-left:0)
+     - done: push to right (auto margin-left)
+  */
+  transition: margin-left .25s ease;
+}
+.todo-item.done{ margin-left: auto; }
+
+/* Card (fixed width/height) */
+.todo-card{
+  display:flex; align-items:center; gap:10px;
+  width: var(--todo-w);
+  height: var(--todo-h);
+  padding: 8px 12px;
+  background: rgba(255,255,255,.10);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.10);
+  overflow: hidden;
 }
 
-/* Month/Year picker (popover) */
-.cal-picker{
-  position: absolute; inset: auto 0 0 auto; /* bottom-right corner */
-  right: calc(var(--gap) * 0.9);
-  bottom: calc(var(--gap) * 0.9);
-  background: rgba(250,254,255,0.07);
-  border: 1px solid rgba(250,254,255,0.12);
-  border-radius: 16px;
-  padding: 1.2cqh 1.2cqw;
-  backdrop-filter: blur(6px);
-  display: none;
-}
-.cal-picker.open{ display: block; }
-.picker-inner{ display: grid; gap: 1.2cqh; }
-
-.year-row{
-  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.8cqw;
-}
-.year-step{
-  appearance: none; border: 0;
-  background: #fafeff; color: #006666; font-weight: 800;
-  font-size: clamp(12px, 2cqh, 24px);
-  padding: 0.4cqh 1cqw; border-radius: 10px;
-}
-.year-val{
-  text-align: center; color: #fafeff; font-weight: 800;
-  font-size: clamp(14px, 2.2cqh, 28px);
-}
-
-.month-grid{
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.8cqw 0.8cqw;
-}
-.month-grid button{
-  appearance: none; border: 0; border-radius: 10px;
-  padding: 0.9cqh 0.4cqw;
-  background: rgba(250,254,255,0.10);
-  color: #fafeff; font-weight: 700;
-  font-size: clamp(12px, 1.9cqh, 22px);
-}
-.month-grid button:active{ transform: translateY(1px); }
-
-/* Highlight selected month in the picker */
-.month-grid button.active{
-  background: #fafeff;
-  color: #006666;
-  font-weight: 800;
-}
-
-/* Holiday highlight (current-month vs off-month) */
-.cal-grid .d.holiday:not(.other){
-  box-shadow: 0 0 0 2px #f84051 inset;
-}
-.cal-grid .d.holiday.other{
-  box-shadow: 0 0 0 2px rgba(248, 64, 81, 0.35) inset;
-}
-/* If you also want the number itself to tint a bit on holidays: */
-.cal-grid .d.holiday:not(.today){ color: #fafeff; }
-
-/* Sundays in the current month (keep full red) */
-.cal-grid .d.sun:not(.other){
-  color: #f84051;
-}
-
-/* Sundays that are NOT in the current month: lighter red */
-.cal-grid .d.other.sun{
-  color: rgba(248, 64, 81, 0.55); /* softer red */
-}
-
-.picker-actions{
-  display: grid; justify-items: end;
-}
-.picker-close{
-  appearance: none; border: 0; border-radius: 10px;
-  background: rgba(250,254,255,0.10);
-  color: #fafeff; font-weight: 700;
-  font-size: clamp(12px, 1.8cqh, 20px);
-  padding: 0.7cqh 1.2cqw;
-}
-
-.calc-keys button:active{
-  transform: translateY(1px);
-  box-shadow: inset 0 0 rgba(0,0,0,0.05);
-}
-
-.calc-keys button.fn{ color: #006666; opacity: 0.85; }
-.calc-keys button.warn{ color: #f84051; }
-.calc-keys button.eq{ background: #b4b4b4; color: #006666; font-weight: 800; }
-
-/* ===== EOD LIST ===== */
-.module--eod {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden; /* lock in place (no scrolling) */
-  color: #ffffff; /* make text white */
-}
-
-.module--eod .module-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-
-.module--eod .module-title {
-  font-weight: 900;
-  font-size: 35px;
-  margin: 30px 30px 0 0;
-  color: #fafeff;
-}
-
-.icon-btn {
+/* Checkbox */
+.todo-check{
+  width: 20px; height: 20px;
+  border-radius: 6px;
   appearance: none;
-  border: none;
-  border-radius: 10px;
-  width: 36px;
-  height: 36px;
-  line-height: 36px;
-  text-align: center;
-  font-weight: 700;
-  font-size: 20px;
-  cursor: pointer;
-  background: rgba(255,255,255,1);
-  transition: transform .08s ease, opacity .2s ease, background .2s ease;
-  user-select: none;
-  margin-right: 15px;
+  outline: none; margin: 0;
+  display:inline-grid; place-items:center;
+  background: rgba(255,255,255,.18);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
+  transition: transform .25s ease, background .2s ease, box-shadow .2s ease, opacity .2s ease;
 }
-.icon-btn:active { transform: scale(0.98); }
-.icon-btn[disabled] { opacity: 0.35; cursor: not-allowed; }
-
-.eod-body {
-  position: relative;
-  padding: 30px 30px 30px;
-  flex: 1 1 auto;
-  display: flex;             /* layout header/hint + list */
-  flex-direction: column;
-  overflow-x: hidden;        /* prevent horizontal scroll */
-  overflow-y: auto;          /* vertical scroll inside EOD only */
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain; /* prevent scroll chaining to parent */
+.todo-check:disabled{ opacity:.45; cursor:not-allowed; }
+.todo-check::after{
+  content:"";
+  width: 10px; height: 10px; border-radius: 3px;
+  transform: scale(0);
+  background: #fafeff;
+  transition: transform .18s ease-out;
 }
+.todo-check:checked{ background: rgba(20,155,178,.65); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.todo-check:checked::after{ transform: scale(1); }
 
-.eod-hint {
-  font-size: 15px;
-  color: rgba(255,255,255,0.45);
-  margin: 8px 2px 0;
-  user-select: none;
-}
+/* Spin animation when checked */
+@keyframes spinOnce { from{ transform: rotate(0deg); } to{ transform: rotate(360deg); } }
+.todo-check.spin { animation: spinOnce .35s ease-out 1; }
 
-.eod-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  flex: 1 1 auto;           /* fill the eod-body and scroll internally */
-  overflow-y: auto;         /* scroll vertically inside list */
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.eod-item {
-  position: relative;
-  display: grid;
-  grid-template-columns: 36px 1fr 36px; /* checkbox, text, delete */
-  align-items: center;
-  gap: 5px;
-  padding: 15px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.04);
-  transition: transform .15s ease, background .2s ease, opacity .2s ease;
-  touch-action: pan-y; /* allow vertical pans; we handle horizontal for swipe */
-  user-select: none;
-  cursor: grab; /* indicate draggable */
-  min-width: 0; /* allow shrinking to container to avoid overflow */
-}
-
-.eod-input {
-  width: 100%;
-  border: none;
+/* Input */
+.todo-input{
+  flex:1; min-width:0;
+  border:0; outline:none;
   background: transparent;
-  font: inherit;
-  font-size: 18px;
-  padding: 6px 6px;
-  outline: none;
-  border-radius: 8px;
   color: #ffffff;
-  min-width: 0; /* prevents input from forcing horizontal scroll */
-  transition: transform 3s cubic-bezier(.2,.9,.2,1), opacity 2s ease;
-  will-change: transform, opacity;
-  transform: translateX(0);
-  opacity: 1;
+  font-size: var(--todo-font);
+  font-weight: 600;
+  caret-color: #fafeff;
+}
+.todo-input::placeholder{ color: rgba(255,255,255,.55); }
+
+/* Done visual: grey out input text, prevent editing while checked */
+.todo-item.done .todo-input{
+  color: rgba(255,255,255, var(--todo-done-opacity));
 }
 
-.eod-item.done .eod-input {
-  color: rgba(255,255,255,0.5); /* grey out; no strikethrough */
-  text-align: right;
-  transform: translateX(8px);
-  opacity: 0.95;
-}
+/* Prevent text overflow */
+.todo-input{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.eod-item.dragging {
-  opacity: 0.9;
-  transform: scale(1.02);
-  z-index: 2;
+/* Safe areas & small screens */
+@media (max-width: 900px){
+  :root{ --gap: 14px; --radius: 14px; --todo-pad: 12px; --todo-gap: 8px; --todo-h: 44px; --todo-font: 15px; }
 }
-
-@media (pointer: coarse) {
-  .eod-item { padding: 12px; }
-  .eod-input { font-size: 16px; }
-}
-
-/* custom checkbox (hidden native input + styled checkmark) */
-.custom-checkbox input[type="checkbox"] { display: none; }
-.custom-checkbox .checkmark {
-  display: inline-block;
-  width: 20px; height: 20px;
-  background-color: #eee;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-  margin-right: 8px;
-  vertical-align: middle;
-  position: relative;
-  cursor: pointer;
-}
-.custom-checkbox input:checked + .checkmark::after {
-  content: "";
-  position: absolute;
-  left: 5px; top: 1px;
-  width: 6px; height: 12px;
-  border: solid #333;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg);
-}
-.custom-checkbox:hover .checkmark { background-color: #ddd; }
-
-/* checkbox-spin: hidden native input + animated checkmark that spins */
-.checkbox-spin { display: none; }
-.checkbox-spin + .checkmark {
-  display: inline-block;
-  width: 20px; height: 20px;
-  margin-right: 8px;
-  vertical-align: middle;
-  position: relative;
-  cursor: pointer;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-.checkbox-spin + .checkmark::before,
-.checkbox-spin + .checkmark::after {
-  content: "";
-  position: absolute;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  border: 2px solid #FF4040; /* border color from your SCSS */
-  border-radius: 4px;
-  background: transparent;
-  transition: transform .3s ease-in-out, background .18s ease-in-out, opacity .18s ease-in-out;
-  transform-origin: 50% 50%;
-}
-.checkbox-spin + .checkmark::after { border: none; z-index: 0; opacity: 0.15; }
-
-/* when checked, spin the box and fill color */
-.checkbox-spin:checked + .checkmark::before {
-  transform: rotate(180deg) scale(1.03);
-  background: #FF4040;
-}
-
-/* hover state */
-.custom-checkbox:hover .checkmark,
-.checkbox-spin + .checkmark:hover { background-color: rgba(250,250,250,0.03); }
-
-.custom-checkbox.disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-.custom-checkbox.disabled .checkmark {
-  border-color: rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.02);
+@supports (padding: max(0px)) {
+  .wrap{
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
