@@ -2,52 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Locked viewport (no auto-zoom, no pinch zoom) -->
   <meta name="viewport"
         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>Mini-Apps Shell</title>
+  <title>Mini-Apps Shell — PWA</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;900&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
-      <!-- PWA -->
-      <link rel="manifest" href="manifest.webmanifest">
-      <meta name="theme-color" content="#006666">
-      <meta name="apple-mobile-web-app-capable" content="yes">
-      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-      <meta name="apple-mobile-web-app-title" content="Mini-Apps">
-      <link rel="apple-touch-icon" href="icons/icon-180.png">
-    </head>
+
+  <!-- PWA meta + manifest -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#006666">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mini-Apps">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+</head>
 <body>
-  <!-- Full-viewport wrapper centers the fixed-ratio canvas -->
   <div class="wrap">
-  <!-- iPad canvas: 2124 × 1476 (landscape) -->
-    <main class="canvas">
-      <!-- LEFT COLUMN (3 stacked modules) -->
-      <section class="col left">
-        <div class="mod clock" aria-label="Clock">
-          <div class="clock-inner">
-            <div class="time" id="clockTime">10:30 AM</div>
-            <div class="daydate">
-              <div class="dow"  id="clockDow">SATURDAY</div>
-              <div class="date" id="clockDate">SEP 06</div>
-            </div>
+    <main class="canvas" aria-label="Mini-Apps Canvas">
+      <!-- LEFT COLUMN: clock, calendar, calculator -->
+      <section class="col left" aria-label="Left panel">
+        <!-- Clock -->
+        <div class="mod clock" aria-label="Clock module" data-font-size="48px" data-font-color="#ffffff" data-margin="0.25rem">
+          <div class="clock-inner" role="group" aria-label="Current time">
+            <div class="clock-time" id="manila-time" aria-live="polite">--:--</div>
+            <div class="clock-day" id="manila-day">Loading</div>
           </div>
         </div>
-        <div class="mod calendar" aria-label="Calendar" id="calendar">
+
+        <!-- Calendar -->
+        <section class="mod calendar" aria-label="Calendar" id="calendar">
           <div class="cal-head">
             <button class="cal-monthyear" id="calMYBtn" aria-haspopup="dialog" aria-expanded="false">
               <span id="calMonth">SEPTEMBER</span> <span id="calYear">2025</span>
             </button>
-
-            <button class="cal-today" id="calTodayBtn" title="Jump to today">Today</button>
+            <button class="cal-today" id="calTodayBtn" type="button" title="Jump to today">Today</button>
           </div>
 
           <div class="cal-weekdays" aria-hidden="true">
-          <div class="wk s">SUN</div><div class="wk">MON</div><div class="wk">TUE</div>
-          <div class="wk">WED</div><div class="wk">THU</div><div class="wk">FRI</div><div class="wk">SAT</div>
+            <div class="wk s">SUN</div><div class="wk">MON</div><div class="wk">TUE</div>
+            <div class="wk">WED</div><div class="wk">THU</div><div class="wk">FRI</div><div class="wk">SAT</div>
           </div>
 
           <div class="cal-grid" id="calGrid" role="grid" aria-label="Month grid"></div>
 
-          <!-- Month/Year picker (opens when month-year is tapped) -->
+          <!-- Month/Year picker -->
           <div class="cal-picker" id="calPicker" role="dialog" aria-modal="false" aria-labelledby="calMYBtn">
             <div class="picker-inner">
               <div class="year-row">
@@ -65,10 +69,211 @@
               </div>
             </div>
           </div>
-        </div>
-        <div class="mod calculator" aria-label="Calculator">
+        </section>
+
+        <script>
+        (() => {
+          const tz = 'Asia/Manila';
+          const $  = (s, r = document) => r.querySelector(s);
+
+          // DOM refs
+          const calGrid    = $('#calGrid');
+          const calMonth   = $('#calMonth');
+          const calYear    = $('#calYear');
+          const btnToday   = $('#calTodayBtn');
+          const btnMY      = $('#calMYBtn');
+          const picker     = $('#calPicker');
+          const pickerYear = $('#pickerYear');
+          const pickerClose= $('#pickerClose');
+
+          function manilaTodayParts(){
+            const parts = new Intl.DateTimeFormat('en-US', {
+              timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric'
+            }).formatToParts(new Date());
+            const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+            return { y: +map.year, m: (+map.month - 1), d: +map.day };
+          }
+          function dow(y, m, d){
+            const t = [0,3,2,5,0,3,5,1,4,6,2,4];
+            if (m < 3) y -= 1;
+            return (y + Math.floor(y/4) - Math.floor(y/100) + Math.floor(y/400) + t[m-1] + d) % 7;
+          }
+          function daysInMonth(y, m0){
+            return [31, (y%4===0 && y%100!==0)|| (y%400===0) ? 29:28, 31,30,31,30,31,31,30,31,30,31][m0];
+          }
+          function monthName(m0){
+            return ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'][m0];
+          }
+          const pad = n => (n<10?'0'+n:''+n);
+          function holidayName(y, m0, d){
+            const iso = `${y}-${pad(m0+1)}-${pad(d)}`;
+            return (typeof window.phHolidayNameForISO === 'function')
+              ? window.phHolidayNameForISO(iso)
+              : null;
+          }
+
+          const today = manilaTodayParts();
+          let view = { y: today.y, m: today.m };
+          let tempYear = view.y, tempMonth = view.m;
+
+          function render(){
+            calMonth.textContent = monthName(view.m);
+            calYear.textContent  = String(view.y);
+
+            const firstDow = dow(view.y, view.m + 1, 1);
+            const dim      = daysInMonth(view.y, view.m);
+            let start = 1 - firstDow;
+
+            const frag = document.createDocumentFragment();
+            for (let i = 0; i < 35; i++) { // 5 rows x 7 columns
+              let y = view.y, m = view.m, d = start + i;
+
+              if (d < 1){
+                m = (view.m + 11) % 12;
+                y = view.y - (view.m === 0 ? 1 : 0);
+                d = daysInMonth(y, m) + d;
+              } else if (d > dim){
+                d = d - dim;
+                m = (view.m + 1) % 12;
+                y = view.y + (view.m === 11 ? 1 : 0);
+              }
+
+              const cell = document.createElement('div');
+              cell.className = 'd';
+              cell.setAttribute('role','gridcell');
+              cell.dataset.y = y; cell.dataset.m = m; cell.dataset.d = d;
+              cell.textContent = d;
+
+              const h = holidayName(y, m, d);
+              if (h){ cell.classList.add('holiday'); cell.title = h; }
+              if (m !== view.m) cell.classList.add('other');
+              if (i % 7 === 0) cell.classList.add('sun');
+              if (y === today.y && m === today.m && d === today.d) cell.classList.add('today');
+
+              frag.appendChild(cell);
+            }
+            calGrid.innerHTML = '';
+            calGrid.appendChild(frag);
+          }
+
+          function setMonthButtonsActive(){
+            const buttons = picker.querySelectorAll('.month-grid button');
+            buttons.forEach((b, idx) => b.classList.toggle('active', idx === tempMonth));
+          }
+          function openPicker(){
+            tempYear  = view.y;
+            tempMonth = view.m;
+            pickerYear.textContent = String(tempYear);
+            setMonthButtonsActive();
+            picker.classList.add('open');
+            btnMY.setAttribute('aria-expanded','true');
+          }
+          function closePicker(){
+            picker.classList.remove('open');
+            btnMY.setAttribute('aria-expanded','false');
+          }
+          function applySelection({close=false, live=true} = {}){
+            const monthChanged = (tempMonth !== view.m);
+            const yearChanged  = (tempYear  !== view.y);
+            if (monthChanged && yearChanged) { view.y = tempYear; view.m = tempMonth; }
+            else if (monthChanged) { view.m = tempMonth; }
+            else if (yearChanged) { view.y = tempYear; }
+            if (live) render();
+            if (close) closePicker();
+          }
+
+          function goToToday(){
+            const d = manilaTodayParts();
+            view.y = d.y; view.m = d.m;
+            render();
+            try { picker.classList.remove('open'); btnMY.setAttribute('aria-expanded','false'); } catch {}
+          }
+          btnToday?.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); goToToday(); });
+          document.addEventListener('click', (e) => { if (e.target?.id === 'calTodayBtn'){ e.preventDefault(); goToToday(); } }, { capture: true });
+
+          btnMY.addEventListener('click', () => picker.classList.contains('open') ? closePicker() : openPicker());
+          pickerClose.addEventListener('click', () => applySelection({close:true, live:true}));
+
+          picker.addEventListener('click', (e) => {
+            const stepBtn = e.target.closest('.year-step');
+            if (stepBtn){
+              tempYear += parseInt(stepBtn.dataset.step, 10);
+              pickerYear.textContent = String(tempYear);
+              applySelection({close:false, live:true});
+              return;
+            }
+            const mBtn = e.target.closest('.month-grid button');
+            if (mBtn){
+              tempMonth = parseInt(mBtn.dataset.m, 10);
+              setMonthButtonsActive();
+              applySelection({close:false, live:true});
+            }
+          });
+
+          document.addEventListener('click', (e) => {
+            if (!picker.classList.contains('open')) return;
+            const inside = e.target.closest('#calPicker, #calMYBtn');
+            if (!inside) closePicker();
+          }, { capture: true });
+
+          render();
+
+          // Swipe month
+          function stepMonth(delta){
+            let m = view.m + delta, y = view.y;
+            if (m > 11){ m = 0; y += 1; }
+            if (m < 0){ m = 11; y -= 1; }
+            view.m = m; view.y = y; render();
+          }
+          const SWIPE_X = 60, SWIPE_Y = 40;
+          let startX=0,startY=0,swiping=false,activeId=null;
+          const surface = document.getElementById('calendar');
+          const shouldIgnore = t => !!t.closest('.cal-head, .cal-picker, .month-grid, .year-step, .picker-close, .cal-monthyear, .cal-today');
+
+          surface.addEventListener('pointerdown', (e) => {
+            if (shouldIgnore(e.target)) return;
+            if (e.pointerType === 'mouse' && e.buttons !== 1) return;
+            activeId = e.pointerId; startX=e.clientX; startY=e.clientY; swiping=true;
+            surface.setPointerCapture?.(activeId);
+          }, { passive: true });
+
+          surface.addEventListener('pointermove', (e) => {
+            if (!swiping || e.pointerId !== activeId) return;
+            const dx = e.clientX - startX, dy = e.clientY - startY;
+            if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) e.preventDefault?.();
+          }, { passive: false });
+
+          function finishSwipe(e){
+            if (!swiping || (activeId !== null && e.pointerId !== activeId)) return;
+            const endX = e.clientX ?? e.changedTouches?.[0]?.clientX ?? startX;
+            const endY = e.clientY ?? e.changedTouches?.[0]?.clientY ?? startY;
+            const dx = endX - startX, dy = endY - startY;
+            swiping=false; activeId=null;
+            if (Math.abs(dx) >= SWIPE_X && Math.abs(dy) <= SWIPE_Y){
+              dx < 0 ? stepMonth(+1) : stepMonth(-1);
+            }
+          }
+          surface.addEventListener('pointerup', finishSwipe, { passive: true });
+          surface.addEventListener('pointercancel', finishSwipe, { passive: true });
+          surface.addEventListener('touchstart', (e) => {
+            if (shouldIgnore(e.target) || swiping) return;
+            const t=e.changedTouches[0]; startX=t.clientX; startY=t.clientY; swiping=true;
+          }, { passive: true });
+          surface.addEventListener('touchmove', (e) => {
+            if (!swiping) return;
+            const t=e.changedTouches[0], dx=t.clientX-startX, dy=t.clientY-startY;
+            if (Math.abs(dx)>10 && Math.abs(dx)>Math.abs(dy)) e.preventDefault();
+          }, { passive: false });
+          surface.addEventListener('touchend', finishSwipe, { passive: true });
+          surface.addEventListener('touchcancel', ()=>{ swiping=false; }, { passive: true });
+        })();
+        </script>
+
+        <script src="ph-holidays.js"></script>
+
+        <!-- Calculator -->
+        <div class="mod calculator" aria-label="Calculator module">
           <div class="calc-display" id="calcDisplay">0</div>
-          <!-- NEW: warning line -->
           <div class="calc-msg" id="calcMsg" aria-live="polite"></div>
           <div class="calc-keys" role="group" aria-label="Calculator keypad">
             <button data-key="paren" class="fn">()</button>
@@ -96,32 +301,50 @@
             <button data-key="op" data-op="+">+</button>
           </div>
         </div>
+        <script src="calculator.js"></script>
       </section>
 
-      <!-- RIGHT COLUMN (EOD full-height) -->
-      <section class="col right">
-        <div class="mod eod" aria-label="To-do List">
-          <section class="module module--eod" id="eodModule" aria-label="To-do List" tabindex="-1">
-            <header class="module-head">
-              <h2 class="module-title">To-do List</h2>
-               <button id="eodClearBtn" class="icon-btn" aria-label="Clear all items" title="Clear all items">✕</button>
-            </header>
-
-            <div class="module-body eod-body" id="eodBody">
-              <ul id="eodList" class="eod-list" aria-live="polite"></ul>
-              <!-- hint removed -->
-            </div>
-          </section>
-        </div>
+      <!-- RIGHT COLUMN: To-do list -->
+      <section class="col right" aria-label="Right panel">
+  <div class="mod eod" aria-label="To-do module"></div>
       </section>
     </main>
   </div>
-    <script src="pwa.js"></script>
-  <script src="clock.js"></script>
-  <script src="calculator.js"></script>
-  <script src="ph-holidays.js"></script>
-  <script src="calendar.js"></script>
-  <!-- EOD script -->
-<script src="eod.js"></script>
-  </body>
+
+  <!-- PWA registration -->
+  <script src="pwa.js"></script>
+
+  <!-- Clock paint -->
+  <script>
+    (function(){
+      const clockEl = document.querySelector('.mod.clock');
+      if (!clockEl) return;
+      const timeEl = document.getElementById('manila-time');
+      const dayEl = document.getElementById('manila-day');
+
+      const size = clockEl.dataset.fontSize || '48px';
+      const color = clockEl.dataset.fontColor || 'inherit';
+      const margin = clockEl.dataset.margin || '0';
+      const inner = clockEl.querySelector('.clock-inner');
+      if (inner) {
+        inner.style.fontSize = size;
+        inner.style.color = color;
+        inner.style.margin = margin;
+        inner.style.lineHeight = '1.1';
+      }
+
+      function update(){
+        const now = new Date();
+        const timeOpts = { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' };
+        const timeStr = new Intl.DateTimeFormat('en-US', timeOpts).format(now);
+        if (timeEl) timeEl.textContent = timeStr;
+
+        const dayStr = new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone: 'Asia/Manila' }).format(now);
+        if (dayEl) dayEl.textContent = dayStr;
+      }
+      try { update(); } catch {}
+      setInterval(update, 30000);
+    })();
+  </script>
+ </body>
 </html>
